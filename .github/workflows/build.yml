@@ -1,0 +1,32 @@
+name: Build macOS App with Stockfish
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download Stockfish (macOS)
+        run: |
+          curl -L https://stockfishchess.org/files/stockfish_16_macOS.zip -o stockfish.zip
+          unzip stockfish.zip
+          mv stockfish*/stockfish-macos* stockfish
+          chmod +x stockfish
+
+      - name: Move Stockfish into Resources
+        run: |
+          mkdir -p Resources
+          mv stockfish Resources/stockfish
+
+      - name: Build App
+        run: |
+          xcodebuild -scheme YourApp \
+                     -configuration Release \
+                     -destination 'platform=macOS' \
+                     build

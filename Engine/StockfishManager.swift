@@ -444,11 +444,16 @@ final class StockfishManager {
     private func configureEngine() {
         engineQueue.async { [weak self] in
             guard let self else { return }
-            guard let enginePath = Bundle.main.path(forResource: "stockfish", ofType: nil) else {
-                print("Stockfish binary missing")
-                self.mutateState { self.resetStateForEngineDown() }
-                return
-            }
+           guard let enginePath = Bundle.main.path(forResource: "stockfish", ofType: nil) else {
+    print("⚠️ Stockfish binary NOT FOUND in bundle")
+    print("👉 This is expected if running on Windows or without GitHub Actions build")
+    print("👉 Engine will be unavailable locally")
+
+    self.mutateState { self.resetStateForEngineDown() }
+    return
+}
+
+print("✅ Stockfish loaded at path:", enginePath)
 
             let process = Process()
             let inputPipe = Pipe()
