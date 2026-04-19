@@ -1,0 +1,37 @@
+name: Build Stockfish for macOS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install make gcc
+
+      - name: Clone Stockfish
+        run: git clone https://github.com/official-stockfish/Stockfish.git
+
+      - name: Build Stockfish
+        run: |
+          cd Stockfish/src
+          make build ARCH=x86-64-modern
+
+      - name: Copy binary
+        run: |
+          mkdir -p Resources
+          cp Stockfish/src/stockfish Resources/stockfish
+
+      - name: Commit binary
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add Resources/stockfish
+          git commit -m "Add Stockfish binary" || echo "No changes"
+          git push
