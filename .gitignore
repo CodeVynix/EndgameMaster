@@ -9,5 +9,6 @@ build/
 # SwiftPM
 .build/
 
-# Ignore local engine
+# Ignore all stockfish binaries EXCEPT the one in Resources
 stockfish
+!Resources/stockfish
