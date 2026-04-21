@@ -1,13 +1,45 @@
-name: Test Workflow
+name: Build Stockfish iOS
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+
     steps:
-      - run: echo "WORKFLOW IS RUNNING"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clone Stockfish
+        run: git clone https://github.com/official-stockfish/Stockfish.git
+
+      - name: Build static lib (iOS ARM64)
+        run: |
+          cd Stockfish/src
+          make clean
+          make build ARCH=armv8 COMP=clang CXXFLAGS="-std=c++17 -O3"
+
+      - name: Convert to static library
+        run: |
+          cd Stockfish/src
+          libtool -static -o libstockfish.a *.o
+
+      - name: Move library
+        run: |
+          mkdir -p Engine
+          cp Stockfish/src/libstockfish.a Engine/
+
+      - name: Commit library
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add Engine/libstockfish.a
+          git commit -m "Add compiled Stockfish lib" || echo "No changes"
+          git push
