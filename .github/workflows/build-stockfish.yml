@@ -1,49 +1,41 @@
-name: Build Stockfish + NNUE
+name: Build iOS Stockfish
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-stockfish.yml'
+      - 'Stockfish/**'
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Clone Stockfish
-        run: |
-          git clone https://github.com/official-stockfish/Stockfish.git
+        run: git clone https://github.com/official-stockfish/Stockfish.git
 
-      - name: Build Stockfish (ARM64)
+      - name: Build static lib (ARM64 iOS)
         run: |
           cd Stockfish/src
           make clean
-          make build ARCH=armv8
+          make build ARCH=armv8 COMP=clang CXXFLAGS="-target arm64-apple-ios15.0 -O3"
 
-      - name: Create Resources folder
-        run: mkdir -p Resources
-
-      - name: Copy binary
-        run: cp Stockfish/src/stockfish Resources/stockfish
-
-      - name: Make executable
-        run: chmod +x Resources/stockfish
-
-      - name: Download NNUE
+      - name: Create static library
         run: |
-          curl -L https://tests.stockfishchess.org/api/nn/nn-62ef826d1a6d.nnue -o Resources/nnue.nnue
+          cd Stockfish/src
+          libtool -static *.o -o libstockfish.a
 
-      - name: Verify binary
-        run: file Resources/stockfish
+      - name: Copy to project
+        run: |
+          cp Stockfish/src/libstockfish.a Engine/
 
-      - name: Strip binary (smaller size)
-        run: strip Resources/stockfish || true
-
-      - name: Commit to repo
+      - name: Commit result
         run: |
           git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add Resources/stockfish Resources/nnue.nnue
-          git commit -m "Add Stockfish iOS binary + NNUE" || echo "No changes"
+          git config user.email "actions@github.com"
+          git add Engine/libstockfish.a
+          git commit -m "Add compiled Stockfish lib" || echo "No changes"
           git push
