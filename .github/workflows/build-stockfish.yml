@@ -1,41 +1,40 @@
 name: Build Stockfish iOS
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Clone Stockfish
-        run: git clone https://github.com/official-stockfish/Stockfish.git
+        run: |
+          git clone https://github.com/official-stockfish/Stockfish.git
 
-      - name: Build Stockfish (FIXED)
+      - name: Build static lib (iOS ARM64)
         run: |
           cd Stockfish/src
 
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
-          clang++ -std=c++17 -O3 \
-            -isysroot $SDK \
-            -arch arm64 \
-            -miphoneos-version-min=15.0 \
-            -DNDEBUG \
-            -DUSE_NEON \
-            -pthread \
-            *.cpp \
-            -o stockfish
+          # Compile all .cpp files into .o
+          for file in *.cpp; do
+            clang++ -c "$file" \
+              -std=c++17 \
+              -O3 \
+              -isysroot $SDK \
+              -arch arm64 \
+              -miphoneos-version-min=15.0 \
+              -DNDEBUG \
+              -DUSE_NEON \
+              -pthread
+          done
 
+          # Create static library
           ar rcs libstockfish.a *.o
 
       - name: Move library
@@ -43,16 +42,8 @@ jobs:
           mkdir -p Engine
           cp Stockfish/src/libstockfish.a Engine/
 
-      - name: Commit library
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add Engine/libstockfish.a
-
-          if git diff --cached --quiet; then
-            echo "No changes"
-          else
-            git commit -m "Add compiled Stockfish lib"
-            git push
-          fi
+      - name: Upload artifact (no commit needed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: stockfish-ios-lib
+          path: Engine/libstockfish.a
