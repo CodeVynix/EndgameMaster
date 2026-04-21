@@ -2,9 +2,9 @@ name: Build iOS Stockfish
 
 on:
   push:
-    paths:
-      - '.github/workflows/build-stockfish.yml'
-      - 'Stockfish/**'
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,12 +18,12 @@ jobs:
         run: git clone https://github.com/official-stockfish/Stockfish.git
 
       - name: Build static lib (iOS ARM64)
-  run: |
-    cd Stockfish/src
-    make clean
-    make build ARCH=armv8 COMP=clang \
-      CXXFLAGS="-std=c++17 -O3 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch arm64 -miphoneos-version-min=15.0" \
-      LDFLAGS="-isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch arm64 -miphoneos-version-min=15.0"
+        run: |
+          cd Stockfish/src
+          make clean
+          make build ARCH=armv8 COMP=clang \
+            CXXFLAGS="-std=c++17 -O3 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch arm64 -miphoneos-version-min=15.0" \
+            LDFLAGS="-isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch arm64 -miphoneos-version-min=15.0"
 
       - name: Create static library
         run: |
@@ -31,8 +31,7 @@ jobs:
           libtool -static *.o -o libstockfish.a
 
       - name: Copy to project
-        run: |
-          cp Stockfish/src/libstockfish.a Engine/
+        run: cp Stockfish/src/libstockfish.a Engine/
 
       - name: Commit result
         run: |
