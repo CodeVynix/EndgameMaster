@@ -1,11 +1,7 @@
-name: Build Stockfish for macOS
+name: Build Stockfish + NNUE
 
 on:
-  push:
-    branches: [ main ]
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,30 +10,40 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-
-      - name: Install dependencies
-        run: brew install make gcc
 
       - name: Clone Stockfish
-        run: git clone https://github.com/official-stockfish/Stockfish.git
+        run: |
+          git clone https://github.com/official-stockfish/Stockfish.git
 
-      - name: Build Stockfish
+      - name: Build Stockfish (ARM64)
         run: |
           cd Stockfish/src
-          make build ARCH=x86-64-modern
+          make clean
+          make build ARCH=armv8
+
+      - name: Create Resources folder
+        run: mkdir -p Resources
 
       - name: Copy binary
-        run: |
-          mkdir -p Resources
-          cp Stockfish/src/stockfish Resources/stockfish
-          chmod +x Resources/stockfish
+        run: cp Stockfish/src/stockfish Resources/stockfish
 
-      - name: Commit and push binary
+      - name: Make executable
+        run: chmod +x Resources/stockfish
+
+      - name: Download NNUE
+        run: |
+          curl -L https://tests.stockfishchess.org/api/nn/nn-62ef826d1a6d.nnue -o Resources/nnue.nnue
+
+      - name: Verify binary
+        run: file Resources/stockfish
+
+      - name: Strip binary (smaller size)
+        run: strip Resources/stockfish || true
+
+      - name: Commit to repo
         run: |
           git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add Resources/stockfish
-          git commit -m "Add Stockfish binary" || echo "No changes"
+          git config user.email "github-actions@github.com"
+          git add Resources/stockfish Resources/nnue.nnue
+          git commit -m "Add Stockfish iOS binary + NNUE" || echo "No changes"
           git push

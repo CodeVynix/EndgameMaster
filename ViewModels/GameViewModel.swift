@@ -157,7 +157,7 @@ final class GameViewModel: ObservableObject {
         gameState.statusMessage = "AI is thinking..."
 
         let fen = board.generateFEN(activeColor: .black)
-        stockfish.bestMove(for: fen) { [weak self] bestMove in
+        stockfish.bestMove(for: fen) { [weak self] (bestMove: String?) in
             guard let self else { return }
             self.isThinking = false
             guard let bestMove,

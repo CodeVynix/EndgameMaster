@@ -5,7 +5,7 @@ struct LevelSelectView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 ForEach(PuzzleDifficulty.allCases, id: \.self) { difficulty in
                     Section(difficulty.rawValue) {
