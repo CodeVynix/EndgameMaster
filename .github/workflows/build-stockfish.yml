@@ -6,9 +6,8 @@ on:
       - main
   workflow_dispatch:
 
-jobs:
-  build:
-    runs-on: macos-latest
+permissions:
+  contents: write
 
     steps:
       - name: Checkout
@@ -34,9 +33,9 @@ jobs:
         run: cp Stockfish/src/libstockfish.a Engine/
 
       - name: Commit result
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add Engine/libstockfish.a
-          git commit -m "Add compiled Stockfish lib" || echo "No changes"
-          git push
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+    git add Engine/libstockfish.a
+    git commit -m "Add compiled Stockfish lib" || echo "No changes"
+    git push
