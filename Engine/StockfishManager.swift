@@ -1,14 +1,18 @@
 import Foundation
 
-final class StockfishManager {
+class StockfishManager {
 
-    init() {
-        StockfishWrapper.shared().initializeEngine()
-    }
+    static let shared = StockfishManager()
+
+    private init() {}
 
     func bestMove(for fen: String, completion: @escaping (String?) -> Void) {
         DispatchQueue.global().async {
-            let move = StockfishWrapper.shared().getBestMove(fen)
+            let cString = fen.cString(using: .utf8)
+            let result = get_best_move(cString)
+
+            let move = result != nil ? String(cString: result!) : nil
+
             DispatchQueue.main.async {
                 completion(move)
             }
