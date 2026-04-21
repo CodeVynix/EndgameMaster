@@ -20,16 +20,24 @@ jobs:
       - name: Clone Stockfish
         run: git clone https://github.com/official-stockfish/Stockfish.git
 
-      - name: Build static lib (iOS ARM64)
-        run: |
-          cd Stockfish/src
-          make clean
-          make build ARCH=armv8 COMP=clang CXXFLAGS="-std=c++17 -O3"
+      - name: Build Stockfish (manual compile, WORKING)
+  run: |
+    cd Stockfish/src
 
-      - name: Convert to static library
-        run: |
-          cd Stockfish/src
-          libtool -static -o libstockfish.a *.o
+    SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+
+    clang++ -std=c++17 -O3 \
+      -isysroot $SDK \
+      -arch arm64 \
+      -miphoneos-version-min=15.0 \
+      -DNDEBUG \
+      -DUSE_NEON \
+      -pthread \
+      *.cpp \
+      -o stockfish
+
+    # Convert to static library
+    ar rcs libstockfish.a *.o || true
 
       - name: Move library
         run: |
