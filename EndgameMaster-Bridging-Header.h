@@ -1,1 +1,1 @@
-const char* sf_best_move(const char* fen);
+#include "stockfish_wrapper.h"

@@ -1,33 +1,11 @@
-name: EndgameMaster
-
-options:
-  minimumXcodeGenVersion: 2.38.0
-
-targets:
-  EndgameMaster:
-    type: application
-    platform: iOS
-
-    deploymentTarget: "15.0"
-
-    sources:
-      - path: .
-        excludes:
-          - .github
-          - build
-          - Stockfish
-          - "*.yml"
-
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.codevynix.endgamemaster
-        INFOPLIST_FILE: Info.plist
-        SWIFT_VERSION: 5.0
-
-    info:
-      path: Info.plist
-      properties:
-        CFBundleName: EndgameMaster
-        UILaunchStoryboardName: ""
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.codevynix.endgamemaster
+    INFOPLIST_FILE: Info.plist
+    SWIFT_VERSION: 5.0
+    
+    OTHER_LDFLAGS:
+      - -lc++
+    
+    HEADER_SEARCH_PATHS:
+      - Engine

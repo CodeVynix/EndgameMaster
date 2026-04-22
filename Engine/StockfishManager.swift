@@ -1,17 +1,30 @@
 import Foundation
 
 final class StockfishManager {
-
+    
     static let shared = StockfishManager()
-
+    
     private init() {}
+    
+    private let queue = DispatchQueue(label: "stockfish.queue", qos: .userInitiated)
 
-    /// Temporary fallback (until native engine is connected)
     func bestMove(fen: String, completion: @escaping (String?) -> Void) {
-        DispatchQueue.global().async {
-            // Fake move so app works
-            let fallbackMoves = ["e2e4", "d2d4", "g1f3", "c2c4"]
-            let move = fallbackMoves.randomElement()
+        queue.async {
+            guard let cString = fen.cString(using: .utf8) else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+
+            guard let result = sf_best_move(cString) else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+
+            let move = String(cString: result)
 
             DispatchQueue.main.async {
                 completion(move)
