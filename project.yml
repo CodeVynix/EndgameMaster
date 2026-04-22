@@ -23,7 +23,14 @@ targets:
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
 
-        # 🔥 CRITICAL: link your static library
+        # ✅ REQUIRED for C++ interop
+        CLANG_CXX_LANGUAGE_STANDARD: "c++17"
+        CLANG_CXX_LIBRARY: "libc++"
+
+        # ✅ REQUIRED: bridge header
+        SWIFT_OBJC_BRIDGING_HEADER: Engine/stockfish_wrapper.h
+
+        # ✅ REQUIRED: link static library
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
         OTHER_LDFLAGS: "-lstockfish"
 
