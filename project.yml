@@ -28,7 +28,7 @@ targets:
         CLANG_CXX_LIBRARY: "libc++"
 
         # ✅ REQUIRED: bridge header
-        SWIFT_OBJC_BRIDGING_HEADER: Engine/stockfish_wrapper.h
+        SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
 
         # ✅ REQUIRED: link static library
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
