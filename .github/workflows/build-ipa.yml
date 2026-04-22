@@ -6,25 +6,24 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # 🔥 THIS FIXES YOUR 403 ERROR
+  contents: write
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      # ✅ Install XcodeGen
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      # ✅ Generate Xcode project
+      - name: Generate project
+        run: xcodegen generate
 
-      - name: Clean build folder
-        run: rm -rf build
-
+      # ✅ Build archive
       - name: Archive app
         run: |
           xcodebuild \
@@ -35,21 +34,17 @@ jobs:
           -archivePath $PWD/build/EndgameMaster.xcarchive \
           archive
 
+      # ✅ Export IPA
       - name: Export IPA
         run: |
           mkdir -p build/ipa
 
           cat <<EOF > build/exportOptions.plist
           <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
               <string>development</string>
-              <key>signingStyle</key>
-              <string>automatic</string>
-              <key>compileBitcode</key>
-              <false/>
           </dict>
           </plist>
           EOF
@@ -59,8 +54,7 @@ jobs:
             -exportOptionsPlist build/exportOptions.plist \
             -exportPath build/ipa
 
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: EndgameMaster-IPA
+          name: ipa
           path: build/ipa/*.ipa
