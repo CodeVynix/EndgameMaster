@@ -1,1 +1,1 @@
-#include "stockfish_bridge.h"
+const char* sf_best_move(const char* fen);

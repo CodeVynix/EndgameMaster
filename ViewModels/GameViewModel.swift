@@ -13,7 +13,7 @@ final class GameViewModel: ObservableObject {
     @Published var isThinking: Bool = false
     @Published var showLevelSelect: Bool = false
 
-    let stockfish = StockfishManager()
+    let stockfish = StockfishManager.shared
     let puzzles: [Puzzle] = PuzzleLibrary.all
 
     init() {
