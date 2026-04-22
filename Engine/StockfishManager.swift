@@ -7,10 +7,15 @@ final class StockfishManager {
     private init() {}
 
     func bestMove(fen: String, completion: @escaping (String?) -> Void) {
-        DispatchQueue.global().async {
-            let result = fen.withCString { cString in
-                sf_best_move(cString)
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let cString = fen.cString(using: .utf8) else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
             }
+
+            let result = sf_best_move(cString)
 
             let move = result != nil ? String(cString: result!) : nil
 
