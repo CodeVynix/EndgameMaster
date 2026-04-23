@@ -2,6 +2,7 @@ name: EndgameMaster
 
 options:
   minimumXcodeGenVersion: 2.38.0
+  xcodeVersion: "15.0"
 
 targets:
   EndgameMaster:
