@@ -16,7 +16,7 @@ jobs:
     rm -f Engine/*.o
 
       - name: Build Stockfish for iOS
-    |
+   run: |
     cd Engine
 
     # Compile wrapper
