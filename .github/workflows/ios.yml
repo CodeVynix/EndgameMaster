@@ -25,18 +25,17 @@ jobs:
       - name: Generate project
         run: xcodegen generate
 
-      # ✅ Build Stockfish for iOS
       - name: Build Stockfish
-        run: |
-          git clone https://github.com/official-stockfish/Stockfish.git
-          cd Stockfish/src
+  run: |
+    git clone https://github.com/official-stockfish/Stockfish.git
+    cd Stockfish/src
 
-          make build ARCH=armv8 COMP=clang \
-            CXX=clang++ \
-            CXXFLAGS="-arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path)"
+    make build ARCH=armv8 COMP=clang \
+      CXX=clang++ \
+      CXXFLAGS="-std=c++17 -arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path)"
 
-          mkdir -p ../../Engine
-          ar rcs ../../Engine/libstockfish.a *.o
+    mkdir -p ../../Engine
+    ar rcs ../../Engine/libstockfish.a *.o
 
       # ✅ Verify symbols (debug)
       - name: Verify symbols
