@@ -1,0 +1,35 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clean everything
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+          xcodebuild clean || true
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Build (no signing)
+        run: |
+          xcodebuild \
+          -project EndgameMaster.xcodeproj \
+          -scheme EndgameMaster \
+          -destination 'generic/platform=iOS' \
+          -configuration Release \
+          CODE_SIGNING_ALLOWED=NO \
+          build
