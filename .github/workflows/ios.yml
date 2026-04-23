@@ -13,23 +13,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clean everything
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData
-          xcodebuild clean || true
+      - name: Select Xcode 16
+  run: sudo xcode-select -s /Applications/Xcode_16.4.app
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+- name: Clean everything
+  run: |
+    rm -rf ~/Library/Developer/Xcode/DerivedData
+    xcodebuild clean || true
 
-      - name: Generate project
-        run: xcodegen generate
+- name: Install XcodeGen
+  run: brew install xcodegen
 
-      - name: Build (no signing)
-        run: |
-          xcodebuild \
-          -project EndgameMaster.xcodeproj \
-          -scheme EndgameMaster \
-          -destination 'generic/platform=iOS' \
-          -configuration Release \
-          CODE_SIGNING_ALLOWED=NO \
-          build
+- name: Generate project
+  run: xcodegen generate
+
+- name: Build (no signing)
+  run: |
+    xcodebuild \
+    -project EndgameMaster.xcodeproj \
+    -scheme EndgameMaster \
+    -destination 'generic/platform=iOS' \
+    -configuration Release \
+    CODE_SIGNING_ALLOWED=NO \
+    build
