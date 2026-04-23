@@ -10,15 +10,13 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-      - path: Engine
-      - path: Models
-      - path: ViewModels
-      - path: Views
-      - path: Managers
-      - path: EndgameMasterApp.swift
-      - path: ContentView.swift
-      - path: Info.plist
-      - path: EndgameMaster-Bridging-Header.h
+      - Engine
+      - Models
+      - ViewModels
+      - Views
+      - Managers
+      - ContentView.swift
+      - EndgameMasterApp.swift
 
     settings:
       base:
@@ -26,24 +24,13 @@ targets:
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
 
-        # ✅ C++ support
-        CLANG_CXX_LANGUAGE_STANDARD: "c++17"
-        CLANG_CXX_LIBRARY: "libc++"
+        CLANG_CXX_LANGUAGE_STANDARD: c++17
+        CLANG_CXX_LIBRARY: libc++
 
-        # ✅ bridge header
         SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
 
-        # ✅ static lib linking
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
         OTHER_LDFLAGS: "-lstockfish"
 
     dependencies:
       - framework: Engine/libstockfish.a
-
-    info:
-      path: Info.plist
-      properties:
-        CFBundleName: EndgameMaster
-        UILaunchStoryboardName: ""
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false

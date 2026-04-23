@@ -15,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clean project
-  run: xcodebuild clean || true
-      
-      - name: Clean derived data
-  run: rm -rf ~/Library/Developer/Xcode/DerivedData
+      - name: Clean everything
+  run: |
+    rm -rf ~/Library/Developer/Xcode/DerivedData
+    xcodebuild clean || true
+
 
       # Install XcodeGen
       - name: Install XcodeGen
@@ -30,18 +30,14 @@ jobs:
         run: xcodegen generate
 
       # Archive WITHOUT signing
-      - name: Archive app
-        run: |
-          xcodebuild \
-          -project EndgameMaster.xcodeproj \
-          -scheme EndgameMaster \
-          -destination 'generic/platform=iOS' \
-          -configuration Release \
-          -archivePath $PWD/build/EndgameMaster.xcarchive \
-          CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGN_IDENTITY="" \
-          archive
+      - name: Build
+  run: |
+    xcodebuild \
+    -project EndgameMaster.xcodeproj \
+    -scheme EndgameMaster \
+    -destination 'generic/platform=iOS' \
+    -configuration Release \
+    build
 
       # Export IPA (unsigned)
       - name: Export IPA
