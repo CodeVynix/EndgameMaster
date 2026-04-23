@@ -21,16 +21,22 @@ jobs:
         run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
       - name: Build Stockfish (iOS ARM64)
-        run: |
-          git clone https://github.com/official-stockfish/Stockfish.git
-          cd Stockfish/src
+  run: |
+    git clone https://github.com/official-stockfish/Stockfish.git
+    cd Stockfish/src
 
-          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+    SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
-          clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c *.cpp
+    clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c *.cpp
 
-          mkdir -p ../../Engine
-          ar rcs ../../Engine/libstockfish.a *.o
+    cd ../..
+
+    clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c Engine/stockfish_wrapper.cpp
+
+    ar rcs Engine/libstockfish.a Stockfish/src/*.o Engine/stockfish_wrapper.o
+
+     - name: Verify symbols
+  run: nm -g Engine/libstockfish.a | grep sf_
 
       - name: Generate project
         run: xcodegen generate
