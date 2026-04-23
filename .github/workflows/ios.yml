@@ -7,9 +7,25 @@ on:
 jobs:
   build:
     runs-on: macos-latest   # 👈 you wanted this
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Clean old library
+  run: |
+    rm -f Engine/libstockfish.a
+    rm -f Engine/*.o
+
+      - name: Build Stockfish for iOS
+  run: |
+    cd Engine
+
+    # Compile wrapper
+    clang++ -std=c++17 -O3 -arch arm64 \
+    -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+    -c stockfish_wrapper.cpp -o stockfish_wrapper.o
+
+    # Create static library
+    ar rcs libstockfish.a stockfish_wrapper.o
 
       - name: List Xcode versions
         run: ls /Applications | grep Xcode
