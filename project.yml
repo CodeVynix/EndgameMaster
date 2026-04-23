@@ -10,13 +10,11 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-      - Engine
-      - Models
-      - ViewModels
-      - Views
-      - Managers
-      - ContentView.swift
-      - EndgameMasterApp.swift
+  - path: Engine
+  - path: Models
+  - path: ViewModels
+  - path: Views
+  - path: Managers
 
     settings:
       base:
