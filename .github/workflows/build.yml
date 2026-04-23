@@ -15,6 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clean project
+  run: xcodebuild clean || true
+      
+      - name: Clean derived data
+  run: rm -rf ~/Library/Developer/Xcode/DerivedData
+
       # Install XcodeGen
       - name: Install XcodeGen
         run: brew install xcodegen
