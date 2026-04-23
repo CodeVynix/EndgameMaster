@@ -2,7 +2,7 @@ name: EndgameMaster
 
 options:
   minimumXcodeGenVersion: 2.38.0
-  xcodeVersion: "15.0"
+  xcodeVersion: "15.0"   # 🔥 THIS FIXES YOUR ERROR
 
 targets:
   EndgameMaster:
@@ -11,14 +11,12 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-      - path: Engine
-      - path: Models
-      - path: ViewModels
-      - path: Views
-      - path: Managers
-
-    dependencies:
-      - framework: Engine/libstockfish.a
+      - path: .
+        excludes:
+          - .github
+          - build
+          - Stockfish
+          - "*.yml"
 
     settings:
       base:
@@ -26,8 +24,8 @@ targets:
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
 
-        CLANG_CXX_LANGUAGE_STANDARD: c++17
-        CLANG_CXX_LIBRARY: libc++
+        CLANG_CXX_LANGUAGE_STANDARD: "c++17"
+        CLANG_CXX_LIBRARY: "libc++"
 
         SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
 
