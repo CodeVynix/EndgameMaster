@@ -2,79 +2,48 @@ name: iOS Build
 
 on:
   push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Stockfish (iOS)
-  run: |
-    git clone https://github.com/official-stockfish/Stockfish.git
-    cd Stockfish/src
-
-    make build ARCH=armv8 COMP=clang \
-      CXX=clang++ \
-      CXXFLAGS="-arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path)"
-
-    mkdir -p ../../Engine
-    ar rcs ../../Engine/libstockfish.a *.o
-
-      - name: Verify symbols
-  run: nm -g Engine/libstockfish.a | grep sf_
-
-      # ✅ Ensure correct Xcode
-      - name: Select Xcode
-        run: |
-          sudo xcode-select -s /Applications/Xcode.app
-          xcodebuild -version
-
-      # ✅ Clean EVERYTHING
-      - name: Clean project
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData
-          rm -rf EndgameMaster.xcodeproj
-          rm -f Engine/libstockfish.a
-          rm -f Engine/*.o
+      # ✅ Clean junk
+      - name: Clean
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData || true
 
       # ✅ Install XcodeGen
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      # ✅ Build Stockfish wrapper (iOS arm64)
-      - name: Build Stockfish (TEMP WRAPPER)
-        run: |
-          cd Engine
-
-          # Create wrapper if not exists
-          cat <<EOF > stockfish_wrapper.cpp
-          extern "C" {
-
-          const char* sf_best_move(const char* fen) {
-              return "e2e4";
-          }
-
-          void sf_send_command(const char* cmd) {}
-
-          }
-          EOF
-
-          clang++ -std=c++17 -O3 -arch arm64 \
-          -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
-          -c stockfish_wrapper.cpp -o stockfish_wrapper.o
-
-          ar rcs libstockfish.a stockfish_wrapper.o
-
       # ✅ Generate project
       - name: Generate project
         run: xcodegen generate
 
-      # ✅ Build (no signing)
-      - name: Build
+      # ✅ Build Stockfish for iOS
+      - name: Build Stockfish
+        run: |
+          git clone https://github.com/official-stockfish/Stockfish.git
+          cd Stockfish/src
+
+          make build ARCH=armv8 COMP=clang \
+            CXX=clang++ \
+            CXXFLAGS="-arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path)"
+
+          mkdir -p ../../Engine
+          ar rcs ../../Engine/libstockfish.a *.o
+
+      # ✅ Verify symbols (debug)
+      - name: Verify symbols
+        run: nm -g Engine/libstockfish.a | grep sf_ || true
+
+      # ✅ Build app (NO SIGNING)
+      - name: Build app
         run: |
           xcodebuild \
           -project EndgameMaster.xcodeproj \
