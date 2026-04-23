@@ -10,9 +10,13 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-  - path: .
-    excludes:
-      - Engine/stockfish_wrapper.cpp
+      - path: .
+        excludes:
+          - .github
+          - build
+          - Stockfish
+          - "*.yml"
+          - Engine/stockfish_wrapper.cpp   # 🔥 IMPORTANT FIX
 
     settings:
       base:
