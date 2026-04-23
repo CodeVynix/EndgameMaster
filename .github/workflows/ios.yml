@@ -12,6 +12,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build Stockfish (iOS)
+  run: |
+    git clone https://github.com/official-stockfish/Stockfish.git
+    cd Stockfish/src
+
+    make build ARCH=armv8 COMP=clang \
+      CXX=clang++ \
+      CXXFLAGS="-arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path)"
+
+    mkdir -p ../../Engine
+    ar rcs ../../Engine/libstockfish.a *.o
+
+      - name: Verify symbols
+  run: nm -g Engine/libstockfish.a | grep sf_
+
       # ✅ Ensure correct Xcode
       - name: Select Xcode
         run: |
