@@ -10,11 +10,14 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-  - path: Engine
-  - path: Models
-  - path: ViewModels
-  - path: Views
-  - path: Managers
+      - path: Engine
+      - path: Models
+      - path: ViewModels
+      - path: Views
+      - path: Managers
+
+    dependencies:
+      - framework: Engine/libstockfish.a
 
     settings:
       base:
@@ -30,5 +33,10 @@ targets:
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
         OTHER_LDFLAGS: "-lstockfish"
 
-    dependencies:
-      - framework: Engine/libstockfish.a
+    info:
+      path: Info.plist
+      properties:
+        CFBundleName: EndgameMaster
+        UILaunchStoryboardName: ""
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
