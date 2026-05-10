@@ -53,7 +53,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             archive
 
-      - name: Create IPA (clean bundle)
+      - name: Create IPA (clean bundle only)
         run: |
           mkdir -p Payload
 
