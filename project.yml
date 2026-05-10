@@ -10,14 +10,14 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-  - path: .
-    excludes:
-      - .git
-      - .github
-      - "*.md"
-      - "*.sample"
-      - config.worktree
-      - README.md
+      - path: .
+        excludes:
+          - .git
+          - .github
+          - "*.md"
+          - "*.sample"
+          - config.worktree
+          - README.md
 
     settings:
       base:
@@ -25,14 +25,11 @@ targets:
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
 
-        # C++ interop
         CLANG_CXX_LANGUAGE_STANDARD: "c++17"
         CLANG_CXX_LIBRARY: "libc++"
 
-        # Bridging
         SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
 
-        # Link static lib
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
         OTHER_LDFLAGS: "-lstockfish"
 
