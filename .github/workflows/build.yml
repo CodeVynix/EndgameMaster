@@ -1,64 +1,62 @@
 name: iOS Build
 
 on:
-push:
-branches:
-- main
-workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-build:
-runs-on: macos-latest
+  build:
+    runs-on: macos-latest
 
-```
-steps:
-  - name: Checkout
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  - name: Select Xcode
-    run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-  - name: Install XcodeGen
-    run: brew install xcodegen
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
-  - name: Clean DerivedData
-    run: rm -rf ~/Library/Developer/Xcode/DerivedData
+      - name: Clean DerivedData
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
-  - name: Build Stockfish
-    run: |
-      git clone https://github.com/official-stockfish/Stockfish.git
-      cd Stockfish/src
+      - name: Build Stockfish
+        run: |
+          git clone https://github.com/official-stockfish/Stockfish.git
+          cd Stockfish/src
 
-      SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
-      clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c *.cpp
+          clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c *.cpp
 
-      cd ../../
-      mkdir -p Engine
+          cd ../../
+          mkdir -p Engine
 
-      clang++ -std=c++17 -O3 -arch arm64 \
-        -isysroot $SDK \
-        -c Engine/stockfish_wrapper.cpp \
-        -o Engine/stockfish_wrapper.o
+          clang++ -std=c++17 -O3 -arch arm64 \
+            -isysroot $SDK \
+            -c Engine/stockfish_wrapper.cpp \
+            -o Engine/stockfish_wrapper.o
 
-      ar rcs Engine/libstockfish.a Stockfish/src/*.o Engine/stockfish_wrapper.o
+          ar rcs Engine/libstockfish.a Stockfish/src/*.o Engine/stockfish_wrapper.o
 
-  - name: Generate project
-    run: xcodegen generate
+      - name: Generate project
+        run: xcodegen generate
 
-  - name: Build app
-    run: |
-      xcodebuild \
-        -project EndgameMaster.xcodeproj \
-        -scheme EndgameMaster \
-        -destination 'generic/platform=iOS' \
-        -configuration Release \
-        CODE_SIGNING_ALLOWED=NO \
-        build
+      - name: Build app
+        run: |
+          xcodebuild \
+            -project EndgameMaster.xcodeproj \
+            -scheme EndgameMaster \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            build
 
-  - name: Upload app
-    uses: actions/upload-artifact@v4
-    with:
-      name: EndgameMaster.app
-      path: build/Release-iphoneos/EndgameMaster.app
-```
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: EndgameMaster.app
+          path: build/Release-iphoneos/EndgameMaster.app
