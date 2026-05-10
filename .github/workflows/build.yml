@@ -2,7 +2,8 @@ name: iOS Build
 
 on:
 push:
-branches: [ main ]
+branches:
+- main
 workflow_dispatch:
 
 jobs:
@@ -11,7 +12,7 @@ runs-on: macos-latest
 
 ```
 steps:
-  - name: Checkout repo
+  - name: Checkout
     uses: actions/checkout@v4
 
   - name: Select Xcode
@@ -23,7 +24,6 @@ steps:
   - name: Clean DerivedData
     run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
-  # 🔥 Build Stockfish for iOS (arm64)
   - name: Build Stockfish
     run: |
       git clone https://github.com/official-stockfish/Stockfish.git
@@ -36,7 +36,6 @@ steps:
       cd ../../
       mkdir -p Engine
 
-      # ⚠️ ONLY include wrapper.cpp (NOT wrapper.mm)
       clang++ -std=c++17 -O3 -arch arm64 \
         -isysroot $SDK \
         -c Engine/stockfish_wrapper.cpp \
@@ -44,11 +43,9 @@ steps:
 
       ar rcs Engine/libstockfish.a Stockfish/src/*.o Engine/stockfish_wrapper.o
 
-  # 🔧 Generate Xcode project
   - name: Generate project
     run: xcodegen generate
 
-  # 📦 Build app (no signing)
   - name: Build app
     run: |
       xcodebuild \
@@ -59,7 +56,6 @@ steps:
         CODE_SIGNING_ALLOWED=NO \
         build
 
-  # 📤 Upload build artifact
   - name: Upload app
     uses: actions/upload-artifact@v4
     with:
