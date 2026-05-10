@@ -1,4 +1,4 @@
-name: iOS Build
+name: iOS IPA Build
 
 on:
   push:
@@ -19,9 +19,6 @@ jobs:
 
       - name: Install XcodeGen
         run: brew install xcodegen
-
-      - name: Clean DerivedData
-        run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
       - name: Build Stockfish
         run: |
@@ -45,19 +42,34 @@ jobs:
       - name: Generate project
         run: xcodegen generate
 
-      - name: Build app
+      - name: Archive app
         run: |
           xcodebuild \
             -project EndgameMaster.xcodeproj \
             -scheme EndgameMaster \
-            -destination 'generic/platform=iOS' \
             -configuration Release \
-            -derivedDataPath build \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/EndgameMaster.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            archive
 
-      - name: Upload app
+      - name: Export IPA (unsigned)
+        run: |
+          mkdir -p build/export
+          xcodebuild -exportArchive \
+            -archivePath build/EndgameMaster.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist <(cat <<EOF
+          {
+            "method": "development",
+            "signingStyle": "manual",
+            "compileBitcode": false
+          }
+          EOF
+          )
+
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: EndgameMaster.app
-          path: build/Build/Products/Release-iphoneos/EndgameMaster.app
+          name: EndgameMaster.ipa
+          path: build/export/*.ipa
