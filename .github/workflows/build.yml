@@ -53,15 +53,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             archive
 
-      - name: Create IPA manually (no signing)
+      - name: Create IPA (clean bundle)
         run: |
           mkdir -p Payload
 
-          APP_PATH=$(find build/EndgameMaster.xcarchive -name "*.app" -type d | head -n 1)
+          APP_PATH="build/EndgameMaster.xcarchive/Products/Applications/EndgameMaster.app"
 
-          echo "Found app at: $APP_PATH"
+          echo "Using app at: $APP_PATH"
 
-          cp -r "$APP_PATH" Payload/
+          cp -R "$APP_PATH" Payload/
 
           zip -r EndgameMaster.ipa Payload
 
