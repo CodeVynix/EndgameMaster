@@ -1,84 +1,68 @@
 name: iOS Build
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+push:
+branches: [ main ]
+workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-latest
+build:
+runs-on: macos-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+```
+steps:
+  - name: Checkout repo
+    uses: actions/checkout@v4
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+  - name: Select Xcode
+    run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Clean DerivedData
-        run: rm -rf ~/Library/Developer/Xcode/DerivedData
+  - name: Install XcodeGen
+    run: brew install xcodegen
 
-      - name: Build Stockfish (iOS ARM64)
-        run: |
-          git clone https://github.com/official-stockfish/Stockfish.git
-          cd Stockfish/src
+  - name: Clean DerivedData
+    run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
-          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+  # 🔥 Build Stockfish for iOS (arm64)
+  - name: Build Stockfish
+    run: |
+      git clone https://github.com/official-stockfish/Stockfish.git
+      cd Stockfish/src
 
-          # Compile Stockfish
-          clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c *.cpp
+      SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
-          cd ../../
+      clang++ -std=c++17 -O3 -arch arm64 -isysroot $SDK -c *.cpp
 
-          # Compile wrapper (IMPORTANT)
-          clang++ -std=c++17 -O3 -arch arm64 \
-            -isysroot $SDK \
-            -c Engine/stockfish_wrapper.cpp \
-            -o Engine/stockfish_wrapper.o
+      cd ../../
+      mkdir -p Engine
 
-          # Create static library
-          ar rcs Engine/libstockfish.a Stockfish/src/*.o Engine/stockfish_wrapper.o
+      # ⚠️ ONLY include wrapper.cpp (NOT wrapper.mm)
+      clang++ -std=c++17 -O3 -arch arm64 \
+        -isysroot $SDK \
+        -c Engine/stockfish_wrapper.cpp \
+        -o Engine/stockfish_wrapper.o
 
-      - name: Generate project
-        run: xcodegen generate
+      ar rcs Engine/libstockfish.a Stockfish/src/*.o Engine/stockfish_wrapper.o
 
-      - name: Archive app
-  run: |
-    xcodebuild \
-      -project EndgameMaster.xcodeproj \
-      -scheme EndgameMaster \
-      -destination 'generic/platform=iOS' \
-      -configuration Release \
-      -archivePath build/EndgameMaster.xcarchive \
-      CODE_SIGNING_ALLOWED=NO \
-      archive
+  # 🔧 Generate Xcode project
+  - name: Generate project
+    run: xcodegen generate
 
-- name: Export IPA
-  run: |
-    mkdir -p build/export
+  # 📦 Build app (no signing)
+  - name: Build app
+    run: |
+      xcodebuild \
+        -project EndgameMaster.xcodeproj \
+        -scheme EndgameMaster \
+        -destination 'generic/platform=iOS' \
+        -configuration Release \
+        CODE_SIGNING_ALLOWED=NO \
+        build
 
-    cat <<EOF > build/exportOptions.plist
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    <plist version="1.0">
-    <dict>
-        <key>method</key>
-        <string>development</string>
-        <key>signingStyle</key>
-        <string>automatic</string>
-    </dict>
-    </plist>
-    EOF
-
-    xcodebuild -exportArchive \
-      -archivePath build/EndgameMaster.xcarchive \
-      -exportOptionsPlist build/exportOptions.plist \
-      -exportPath build/export
-
-- name: Upload IPA
-  uses: actions/upload-artifact@v4
-  with:
-    name: EndgameMaster-IPA
-    path: build/export/*.ipa
+  # 📤 Upload build artifact
+  - name: Upload app
+    uses: actions/upload-artifact@v4
+    with:
+      name: EndgameMaster.app
+      path: build/Release-iphoneos/EndgameMaster.app
+```
