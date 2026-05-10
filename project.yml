@@ -10,13 +10,13 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-  - path: .
-    excludes:
-      - .github
-      - build
-      - Stockfish
-      - "*.yml"
-      - Engine/stockfish_wrapper.cpp   # 🔥 CRITICAL
+      - path: .
+        excludes:
+          - .github
+          - build
+          - Stockfish
+          - "*.yml"
+          - Engine/stockfish_wrapper.cpp   # 🔥 important
 
     settings:
       base:
@@ -24,11 +24,14 @@ targets:
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
 
+        # C++ interop
         CLANG_CXX_LANGUAGE_STANDARD: "c++17"
         CLANG_CXX_LIBRARY: "libc++"
 
+        # Bridging
         SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
 
+        # Link static lib
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
         OTHER_LDFLAGS: "-lstockfish"
 
