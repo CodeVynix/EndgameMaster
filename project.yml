@@ -10,14 +10,15 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-      - path: .
-        excludes:
-          - .git
-          - .github
-          - "*.md"
-          - "*.sample"
-          - config.worktree
-          - README.md
+  - path: .
+    excludes:
+      - .git
+      - .github
+      - "*.md"
+      - "*.sample"
+      - config.worktree
+      - README.md
+      - Stockfish   # 🚨 THIS IS THE IMPORTANT FIX
 
     settings:
       base:
