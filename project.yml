@@ -10,27 +10,24 @@ targets:
     deploymentTarget: "15.0"
 
     sources:
-  - path: .
-    excludes:
-      - .git
-      - .github
-      - "*.md"
-      - "*.sample"
-      - config.worktree
-      - README.md
-      - Stockfish   # 🚨 THIS IS THE IMPORTANT FIX
+      - path: .
+        excludes:
+          - .git
+          - .github
+          - "*.md"
+          - "*.sample"
+          - config.worktree
+          - README.md
+          - Stockfish
 
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.codevynix.endgamemaster
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
-
         CLANG_CXX_LANGUAGE_STANDARD: "c++17"
         CLANG_CXX_LIBRARY: "libc++"
-
         SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
-
         LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
         OTHER_LDFLAGS: "-lstockfish"
 
@@ -39,5 +36,3 @@ targets:
       properties:
         CFBundleName: EndgameMaster
         UILaunchStoryboardName: ""
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
