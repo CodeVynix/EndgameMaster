@@ -1,4 +1,4 @@
-name: EndgameMaster
+oname: EndgameMaster
 
 options:
   minimumXcodeGenVersion: 2.38.0
