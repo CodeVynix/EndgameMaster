@@ -1,7 +1,7 @@
-oname: EndgameMaster
+name: EndgameMaster
 
 options:
-  minimumXcodeGenVersion: 2.38.0
+  bundleIdPrefix: com.codevynix
 
 targets:
   EndgameMaster:
@@ -14,10 +14,7 @@ targets:
         excludes:
           - .git
           - .github
-          - "*.md"
-          - "*.sample"
-          - config.worktree
-          - README.md
+          - build
           - Stockfish
 
     settings:
@@ -25,14 +22,3 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.codevynix.endgamemaster
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.0
-        CLANG_CXX_LANGUAGE_STANDARD: "c++17"
-        CLANG_CXX_LIBRARY: "libc++"
-        SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
-        LIBRARY_SEARCH_PATHS: "$(SRCROOT)/Engine"
-        OTHER_LDFLAGS: "-lstockfish"
-
-    info:
-      path: Info.plist
-      properties:
-        CFBundleName: EndgameMaster
-        UILaunchStoryboardName: ""
