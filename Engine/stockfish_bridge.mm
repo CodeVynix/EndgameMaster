@@ -1,40 +1,64 @@
 #import "stockfish_wrapper.h"
-#include <iostream>
+
 #include <thread>
+#include <string>
 #include <sstream>
+#include <iostream>
+#include <mutex>
+#include <condition_variable>
 
-extern "C" {
+// Stockfish includes
+#include "uci.h"
+#include "thread.h"
+#include "position.h"
+#include "search.h"
+#include "misc.h"
 
-static std::string lastBestMove = "e2e4";
+static std::mutex mtx;
+static std::condition_variable cv;
+static std::string bestMove = "";
+static bool ready = false;
 
-// Fake minimal engine loop (replace later with real Stockfish integration)
-void sf_send_command(const char* command) {
-    std::string cmd(command);
+static void engine_loop() {
+    UCI::init(Options);
 
-    std::cout << "Received: " << cmd << std::endl;
-
-    // VERY BASIC parsing (for now)
-    if (cmd.find("position") != std::string::npos) {
-        // pretend we processed position
-    }
-
-    if (cmd.find("go") != std::string::npos) {
-        // simulate thinking
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        lastBestMove = "e7e5"; // temporary fake response
+    std::string token;
+    while (true) {
+        std::getline(std::cin, token);
+        UCI::loop();
     }
 }
 
+extern "C" {
+
+void sf_initialize() {
+    static bool initialized = false;
+    if (initialized) return;
+
+    initialized = true;
+
+    std::thread(engine_loop).detach();
+}
+
+void sf_send_command(const char* command) {
+    std::string cmd(command);
+
+    std::cout << cmd << std::endl;
+}
+
 const char* sf_best_move(const char* fen) {
-    sf_send_command("ucinewgame");
+    sf_initialize();
 
-    std::string pos = "position fen ";
-    pos += fen;
-    sf_send_command(pos.c_str());
+    std::stringstream ss;
+    ss << "position fen " << fen << "\n";
+    ss << "go movetime 300\n";
 
-    sf_send_command("go movetime 200");
+    std::cout << ss.str() << std::endl;
 
-    return lastBestMove.c_str();
+    // TEMP fallback until we hook stdout parsing
+    bestMove = "e2e4";
+
+    return bestMove.c_str();
 }
 
 }
