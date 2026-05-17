@@ -1,237 +1,127 @@
 import Foundation
 import SwiftUI
 
-@MainActor
-final class GameViewModel: ObservableObject {
+class GameViewModel: ObservableObject {
+    
     @Published var board = ChessBoard()
-    @Published var gameState = GameState()
-    @Published var selectedPosition: Position?
-    @Published var legalMoves: [Position] = []
-    @Published var currentPuzzle: Puzzle?
-    @Published var puzzleMoveIndex: Int = 0
-    @Published var aiElo: Double = 1200
-    @Published var isThinking: Bool = false
-    @Published var showLevelSelect: Bool = false
-
-    let stockfish = StockfishManager.shared
-    let puzzles: [Puzzle] = PuzzleLibrary.all
-
-    init() {
-        loadPuzzle(puzzles.first ?? PuzzleLibrary.fallback)
-    }
-
-    var groupedPuzzles: [PuzzleDifficulty: [Puzzle]] {
-        Dictionary(grouping: puzzles, by: \.difficulty)
-    }
-
-    var completedCount: Int {
-        puzzles.filter { ProgressManager.shared.isCompleted($0.id) }.count
-    }
-
-    func newPuzzle() {
-        let unsolved = puzzles.filter { !ProgressManager.shared.isCompleted($0.id) }
-        loadPuzzle((unsolved.isEmpty ? puzzles : unsolved).randomElement() ?? PuzzleLibrary.fallback)
-    }
-
-    func nextLevel() {
-        guard let currentPuzzle else {
-            newPuzzle()
-            return
+    
+    // MARK: Engine
+    @Published var eval: Double = 0
+    @Published var bestMove: String?
+    @Published var pv: [String] = []
+    
+    // MARK: Hint UI
+    @Published var hintMove: (Int, Int)?
+    
+    // MARK: Puzzle Mode
+    @Published var isPuzzleMode = false
+    @Published var puzzleMoves: [String] = []
+    @Published var puzzleIndex = 0
+    
+    private let engine = StockfishManager.shared
+    
+    // MARK: Play move
+    
+    func playMove(_ move: Move) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            board.makeMove(move)
         }
-
-        let sameDifficulty = puzzles
-            .filter { $0.difficulty == currentPuzzle.difficulty }
-            .sorted { $0.title < $1.title }
-
-        guard let idx = sameDifficulty.firstIndex(of: currentPuzzle) else {
-            newPuzzle()
-            return
-        }
-
-        let nextIdx = sameDifficulty.index(after: idx)
-        if nextIdx < sameDifficulty.endIndex {
-            loadPuzzle(sameDifficulty[nextIdx])
+        
+        SoundManager.shared.move()
+        
+        if isPuzzleMode {
+            checkPuzzleMove(move.toUCI())
         } else {
-            if let upgraded = nextDifficulty(from: currentPuzzle.difficulty),
-               let nextPuzzle = groupedPuzzles[upgraded]?.first {
-                loadPuzzle(nextPuzzle)
-            } else {
-                loadPuzzle(sameDifficulty[idx])
-            }
+            analyze()
         }
     }
-
-    func setAiElo(_ value: Double) {
-        aiElo = value
-        stockfish.setElo(Int(value))
-    }
-
-    func selectSquare(_ position: Position) {
-        guard let piece = board.piece(at: position), piece.color == gameState.currentTurn else {
-            selectedPosition = nil
-            legalMoves = []
-            return
-        }
-
-        selectedPosition = position
-        legalMoves = board.legalMoves(from: position, color: gameState.currentTurn)
-    }
-
-    func attemptMove(to target: Position) {
-        guard let source = selectedPosition else { return }
-        makeMove(from: source, to: target)
-    }
-
-    func makeMove(from: Position, to: Position) {
-        guard let piece = board.piece(at: from), piece.color == gameState.currentTurn else {
-            resetSelection()
-            return
-        }
-
-        guard let result = board.move(from: from, to: to, color: gameState.currentTurn) else {
-            resetSelection()
-            return
-        }
-
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
-            SoundManager.shared.playMove(didCapture: result.didCapture)
-            resetSelection()
-        }
-
-        if gameState.mode == .puzzle {
-            validatePuzzleMove(from: from, to: to)
-        } else {
-            advanceTurnAndStatus()
-            requestAiMoveIfNeeded()
+    
+    // MARK: Engine
+    
+    func analyze() {
+        let fen = board.toFEN()
+        
+        engine.start(fen: fen) { eval, _, _, _, best, pv in
+            self.eval = eval
+            self.bestMove = best
+            self.pv = pv
+            
+            self.updateHint()
         }
     }
-
-    func switchToAIMode() {
-        gameState.mode = .aiMatch
-        gameState.statusMessage = "Your turn"
-        board.loadStandardPosition()
-        gameState.currentTurn = .white
-        resetSelection()
+    
+    func stop() {
+        engine.stop()
     }
-
-    func loadPuzzle(_ puzzle: Puzzle) {
-        currentPuzzle = puzzle
-        puzzleMoveIndex = 0
-        gameState.mode = .puzzle
-        gameState.currentTurn = .white
-        gameState.statusMessage = puzzle.title
-        gameState.isSolved = false
-        gameState.isCheckmate = false
+    
+    // MARK: Hint
+    
+    func updateHint() {
+        guard let best = bestMove, best.count >= 4 else { return }
+        
+        let from = squareIndex(from: String(best.prefix(2)))
+        let to = squareIndex(from: String(best.suffix(2)))
+        
+        hintMove = (from, to)
+    }
+    
+    // MARK: Puzzle
+    
+    func startPuzzle() {
+        guard let puzzle = PuzzleManager.shared.next() else { return }
+        
         board.loadFEN(puzzle.fen)
-        resetSelection()
+        puzzleMoves = puzzle.solution
+        puzzleIndex = 0
+        isPuzzleMode = true
     }
-
-    private func validatePuzzleMove(from: Position, to: Position) {
-        guard let currentPuzzle else { return }
-        guard puzzleMoveIndex < currentPuzzle.solution.count else { return }
-
-        let expected = currentPuzzle.solution[puzzleMoveIndex]
-        let played = "\(from.algebraic)\(to.algebraic)"
-        if played == expected {
-            puzzleMoveIndex += 1
-            if puzzleMoveIndex >= currentPuzzle.solution.count {
-                gameState.statusMessage = "Solved! 🎉"
-                gameState.isSolved = true
-                ProgressManager.shared.markCompleted(currentPuzzle.id)
-                return
+    
+    func checkPuzzleMove(_ move: String) {
+        guard puzzleIndex < puzzleMoves.count else { return }
+        
+        if move == puzzleMoves[puzzleIndex] {
+            puzzleIndex += 1
+            SoundManager.shared.move()
+            
+            if puzzleIndex == puzzleMoves.count {
+                print("Puzzle solved 🎉")
             }
-            gameState.currentTurn = gameState.currentTurn.opposite
-            gameState.statusMessage = "Good move! Keep going."
         } else {
-            gameState.statusMessage = "Try again"
-            board.loadFEN(currentPuzzle.fen)
-            puzzleMoveIndex = 0
-            gameState.currentTurn = .white
-        }
-        updateCheckStatus()
-    }
-
-    private func requestAiMoveIfNeeded() {
-        guard gameState.mode == .aiMatch, gameState.currentTurn == .black else { return }
-        isThinking = true
-        gameState.statusMessage = "AI is thinking..."
-
-        let fen = board.generateFEN(activeColor: .black)
-        stockfish.bestMove(fen: fen) { [weak self] (bestMove: String?) in
-            guard let self else { return }
-            self.isThinking = false
-            guard let bestMove,
-                  let parsed = ChessBoard.parseMove(bestMove),
-                  self.board.isLegalMove(from: parsed.from, to: parsed.to, color: .black),
-                  let result = self.board.move(from: parsed.from, to: parsed.to, color: .black) else {
-                self.gameState.statusMessage = "AI move unavailable"
-                return
-            }
-
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
-                SoundManager.shared.playMove(didCapture: result.didCapture)
-            }
-            self.advanceTurnAndStatus()
+            SoundManager.shared.illegal()
         }
     }
-
-    private func advanceTurnAndStatus() {
-        gameState.currentTurn = gameState.currentTurn.opposite
-        updateCheckStatus()
-
-        if board.isCheckmate(color: gameState.currentTurn) {
-            gameState.isCheckmate = true
-            gameState.statusMessage = "Checkmate! You win 🎉"
-        } else if board.isKingInCheck(color: gameState.currentTurn) {
-            gameState.statusMessage = "Check"
-        } else {
-            gameState.statusMessage = gameState.currentTurn == .white ? "Your turn" : "AI turn"
-        }
-    }
-
-    private func updateCheckStatus() {
-        if board.isCheckmate(color: gameState.currentTurn) {
-            gameState.statusMessage = "Checkmate! You win 🎉"
-            gameState.isCheckmate = true
-        } else if board.isKingInCheck(color: gameState.currentTurn) {
-            gameState.statusMessage = "Check"
-        } else {
-            gameState.isCheckmate = false
-        }
-    }
-
-    private func nextDifficulty(from current: PuzzleDifficulty) -> PuzzleDifficulty? {
-        switch current {
-        case .beginner: return .intermediate
-        case .intermediate: return .advanced
-        case .advanced: return nil
-        }
-    }
-
-    private func resetSelection() {
-        selectedPosition = nil
-        legalMoves = []
+    
+    // MARK: Helpers
+    
+    func squareIndex(from algebraic: String) -> Int {
+        let file = Int(algebraic.first!.asciiValue! - Character("a").asciiValue!)
+        let rank = Int(algebraic.last!.asciiValue! - Character("1").asciiValue!)
+        return rank * 8 + file
     }
 }
 
-enum PuzzleLibrary {
-    static let fallback = Puzzle(
-        title: "Fallback Mate",
-        fen: "6k1/5ppp/8/8/8/5Q2/6PP/6K1 w - - 0 1",
-        solution: ["f3a8"],
-        difficulty: .beginner
-    )
+// ADD THIS INSIDE CLASS
 
-    static let all: [Puzzle] = [
-        Puzzle(title: "Mate in One #1", fen: "6k1/5ppp/8/8/8/5Q2/6PP/6K1 w - - 0 1", solution: ["f3a8"], difficulty: .beginner),
-        Puzzle(title: "Mate in One #2", fen: "k7/8/1KQ5/8/8/8/8/8 w - - 0 1", solution: ["c6a8"], difficulty: .beginner),
-        Puzzle(title: "Simple Fork", fen: "4k3/8/8/3N4/8/8/8/4K3 w - - 0 1", solution: ["d5f6"], difficulty: .beginner),
-        Puzzle(title: "Rook Finish", fen: "6k1/8/8/8/8/8/6R1/6K1 w - - 0 1", solution: ["g2a2"], difficulty: .beginner),
-        Puzzle(title: "Queen Net", fen: "4k3/8/8/8/8/2Q5/8/4K3 w - - 0 1", solution: ["c3c8"], difficulty: .intermediate),
-        Puzzle(title: "Bishop Strike", fen: "4k3/8/8/3B4/8/8/8/4K3 w - - 0 1", solution: ["d5c6"], difficulty: .intermediate),
-        Puzzle(title: "Knight Pressure", fen: "4k3/8/8/8/3N4/8/8/4K3 w - - 0 1", solution: ["d4f5"], difficulty: .intermediate),
-        Puzzle(title: "Rook Lift", fen: "4k3/8/8/8/8/8/4R3/4K3 w - - 0 1", solution: ["e2e8"], difficulty: .intermediate),
-        Puzzle(title: "Advanced Mate #1", fen: "6k1/5ppp/8/8/8/6Q1/6PP/6K1 w - - 0 1", solution: ["g3b8"], difficulty: .advanced),
-        Puzzle(title: "Advanced Mate #2", fen: "k7/8/1K6/2Q5/8/8/8/8 w - - 0 1", solution: ["c5a7"], difficulty: .advanced)
-    ]
+func playMove(from: Position, to: Position) {
+    
+    if let _ = board.makeMove(from: from, to: to) {
+        SoundManager.shared.move()
+        analyze()
+    } else {
+        SoundManager.shared.illegal()
+    }
+}
+
+// REPLACE updateHint()
+
+func updateHint() {
+    guard let best = bestMove, best.count >= 4 else { return }
+    
+    let fromStr = String(best.prefix(2))
+    let toStr = String(best.suffix(2))
+    
+    let from = squareIndex(from: fromStr)
+    let to = squareIndex(from: toStr)
+    
+    hintMove = (from, to)
 }

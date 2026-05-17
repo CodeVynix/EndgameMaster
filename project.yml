@@ -15,10 +15,14 @@ targets:
           - .git
           - .github
           - build
-          - Stockfish
+
+      - path: Stockfish/src
+
+    resources:
+      - Resources
 
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.codevynix.endgamemaster
-        INFOPLIST_FILE: Info.plist
-        SWIFT_VERSION: 5.0
+        SWIFT_OBJC_BRIDGING_HEADER: EndgameMaster-Bridging-Header.h
+        ENABLE_BITCODE: NO

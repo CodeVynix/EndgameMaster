@@ -1,0 +1,10 @@
+{
+  "startpos": {
+    "e2e4": "King's Pawn",
+    "d2d4": "Queen's Pawn"
+  },
+  "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1": {
+    "c7c5": "Sicilian Defense",
+    "e7e5": "Open Game"
+  }
+}

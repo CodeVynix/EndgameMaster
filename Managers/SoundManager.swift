@@ -1,37 +1,31 @@
+import Foundation
 import AVFoundation
-import UIKit
 
-final class SoundManager {
+class SoundManager {
     static let shared = SoundManager()
-
-    private var movePlayer: AVAudioPlayer?
-    private var capturePlayer: AVAudioPlayer?
-
-    private init() {
-        movePlayer = makePlayer(fileName: "move", ext: "wav")
-        capturePlayer = makePlayer(fileName: "capture", ext: "wav")
-    }
-
-    func playMove(didCapture: Bool) {
-        if didCapture {
-            capturePlayer?.currentTime = 0
-            capturePlayer?.play()
-        } else {
-            movePlayer?.currentTime = 0
-            movePlayer?.play()
+    
+    private var player: AVAudioPlayer?
+    
+    private func play(_ name: String) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "mp3") else {
+            print("Missing sound:", name)
+            return
         }
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
-    }
-
-    private func makePlayer(fileName: String, ext: String) -> AVAudioPlayer? {
-        guard let url = Bundle.main.url(forResource: fileName, withExtension: ext) else { return nil }
+        
         do {
-            let player = try AVAudioPlayer(contentsOf: url)
-            player.prepareToPlay()
-            return player
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.prepareToPlay()
+            player?.play()
         } catch {
-            return nil
+            print("Audio error:", error)
         }
     }
+    
+    func move() { play("move") }
+    func capture() { play("capture") }
+    func check() { play("check") }
+    func illegal() { play("illegal") }
+    func premove() { play("premove") }
+    func start() { play("game-start") }
+    func checkmate() { play("checkmate") }
 }

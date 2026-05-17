@@ -1,7 +1,11 @@
-#ifndef EndgameMaster_Bridging_Header_h
-#define EndgameMaster_Bridging_Header_h
+void sf_init(void);
+void sf_go(const char* fen);
+void sf_stop(void);
 
-void sf_send_command(const char *command);
-const char* sf_best_move(const char *fen);
+int sf_eval(void);
+int sf_depth(void);
+int sf_nodes(void);
+int sf_nps(void);
 
-#endif
+const char* sf_bestmove(void);
+const char* sf_pv(void);

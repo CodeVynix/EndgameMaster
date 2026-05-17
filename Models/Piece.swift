@@ -1,44 +1,28 @@
 import Foundation
 
-enum PieceColor: String, Codable {
-    case white
-    case black
-
-    var opposite: PieceColor {
-        self == .white ? .black : .white
-    }
+enum PieceType {
+    case king, queen, rook, bishop, knight, pawn
 }
 
-enum PieceType: String, Codable {
-    case king
-    case queen
-    case rook
-    case bishop
-    case knight
-    case pawn
+enum PieceColor {
+    case white, black
+}
+
+struct Piece {
+    var type: PieceType
+    var color: PieceColor
 
     var fenSymbol: String {
-        switch self {
-        case .king: return "k"
-        case .queen: return "q"
-        case .rook: return "r"
-        case .bishop: return "b"
-        case .knight: return "n"
-        case .pawn: return "p"
+        let symbol: String
+        switch type {
+        case .king: symbol = "k"
+        case .queen: symbol = "q"
+        case .rook: symbol = "r"
+        case .bishop: symbol = "b"
+        case .knight: symbol = "n"
+        case .pawn: symbol = "p"
         }
-    }
-}
 
-struct Piece: Codable, Hashable {
-    let type: PieceType
-    let color: PieceColor
-
-    var imageName: String {
-        "\(color.rawValue)_\(type.rawValue)"
-    }
-
-    var fenCharacter: String {
-        let symbol = type.fenSymbol
         return color == .white ? symbol.uppercased() : symbol
     }
 }

@@ -1,82 +1,68 @@
 import SwiftUI
 
 struct ChessBoardView: View {
+    
     @ObservedObject var viewModel: GameViewModel
-
+    
+    let columns = Array(repeating: GridItem(.flexible()), count: 8)
+    
+    @State private var selected: Position? = nil
+    
     var body: some View {
-        GeometryReader { geometry in
-            let side = min(geometry.size.width, geometry.size.height)
-            let squareSize = side / 8
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        ZStack {
+            
+            LazyVGrid(columns: columns, spacing: 0) {
+                ForEach(0..<64, id: \.self) { index in
+                    
+                    let pos = Position(row: 7 - index / 8, col: index % 8)
+                    let piece = viewModel.board.piece(at: pos)
+                    
+                    SquareView(
+                        piece: piece,
+                        isLight: (index / 8 + index % 8) % 2 == 0,
+                        isSelected: selected == pos,
+                        isLastMove: false
                     )
-
-                VStack(spacing: 0) {
-                    ForEach(0..<8, id: \.self) { row in
-                        HStack(spacing: 0) {
-                            ForEach(0..<8, id: \.self) { col in
-                                let position = Position(row: row, col: col)
-                                SquareView(
-                                    position: position,
-                                    piece: viewModel.board.piece(at: position),
-                                    isLight: (row + col) % 2 == 0,
-                                    isSelected: viewModel.selectedPosition == position,
-                                    isLegalMove: viewModel.legalMoves.contains(position),
-                                    size: squareSize
-                                )
-                                .frame(width: squareSize, height: squareSize)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    handleTap(position)
-                                }
-                                .gesture(
-                                    DragGesture(minimumDistance: 6)
-                                        .onEnded { value in
-                                            handleDrag(from: position, value: value, squareSize: squareSize)
-                                        }
-                                )
-                            }
-                        }
+                    .onTapGesture {
+                        handleTap(pos)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(10)
             }
-            .frame(width: side, height: side)
+            
+            // Hint arrow (if exists)
+            if let hint = viewModel.hintMove {
+                HintArrowView(from: hint.0, to: hint.1)
+            }
         }
         .aspectRatio(1, contentMode: .fit)
+        .padding()
     }
-
-    private func handleTap(_ position: Position) {
-        if viewModel.selectedPosition == nil {
-            viewModel.selectSquare(position)
-        } else if viewModel.legalMoves.contains(position) {
-            viewModel.attemptMove(to: position)
+    
+    // MARK: Tap logic
+    
+    func handleTap(_ pos: Position) {
+        
+        if let selected = selected {
+            
+            if let move = viewModel.board.makeMove(from: selected, to: pos) {
+                
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    viewModel.board = viewModel.board
+                }
+                
+                SoundManager.shared.move()
+                viewModel.analyze()
+                
+            } else {
+                SoundManager.shared.illegal()
+            }
+            
+            self.selected = nil
+            
         } else {
-            viewModel.selectSquare(position)
-        }
-    }
-
-    private func handleDrag(from source: Position, value: DragGesture.Value, squareSize: CGFloat) {
-        guard viewModel.selectedPosition == source || viewModel.board.piece(at: source)?.color == viewModel.gameState.currentTurn else {
-            return
-        }
-
-        viewModel.selectSquare(source)
-        let deltaCol = Int((value.translation.width / squareSize).rounded())
-        let deltaRow = Int((value.translation.height / squareSize).rounded())
-        let target = Position(row: source.row + deltaRow, col: source.col + deltaCol)
-
-        guard target.isValid else {
-            return
-        }
-        if viewModel.legalMoves.contains(target) {
-            viewModel.makeMove(from: source, to: target)
+            if viewModel.board.piece(at: pos) != nil {
+                selected = pos
+            }
         }
     }
 }

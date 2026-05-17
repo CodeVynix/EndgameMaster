@@ -20,10 +20,6 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Build Stockfish
-        run: |
-           git clone https://github.com/official-stockfish/Stockfish.git
-
       - name: Generate project
         run: xcodegen generate
 
@@ -38,15 +34,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             archive
 
-      - name: Create IPA (clean bundle only)
+      - name: Create IPA (manual, unsigned)
         run: |
           mkdir -p Payload
 
-          APP_PATH="build/EndgameMaster.xcarchive/Products/Applications/EndgameMaster.app"
+          APP_PATH=$(find build/EndgameMaster.xcarchive -name "*.app" -type d | head -n 1)
 
-          echo "Using app at: $APP_PATH"
+          echo "App found at: $APP_PATH"
 
-          cp -R "$APP_PATH" Payload/
+          cp -r "$APP_PATH" Payload/
 
           zip -r EndgameMaster.ipa Payload
 

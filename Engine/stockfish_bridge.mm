@@ -1,64 +1,91 @@
-#import "stockfish_wrapper.h"
-
-#include <thread>
+#import <Foundation/Foundation.h>
+#include <stdio.h>
 #include <string>
-#include <sstream>
-#include <iostream>
-#include <mutex>
-#include <condition_variable>
+#include <thread>
+#include <atomic>
 
-// Stockfish includes
-#include "uci.h"
-#include "thread.h"
-#include "position.h"
-#include "search.h"
-#include "misc.h"
+using namespace std;
 
-static std::mutex mtx;
-static std::condition_variable cv;
-static std::string bestMove = "";
-static bool ready = false;
+static FILE* engine = nullptr;
+static atomic<bool> running(false);
 
-static void engine_loop() {
-    UCI::init(Options);
+static string bestMove = "";
+static int evalCp = 0;
+static int depth = 0;
+static int nodes = 0;
+static int nps = 0;
+static string pv = "";
 
-    std::string token;
-    while (true) {
-        std::getline(std::cin, token);
-        UCI::loop();
+void send(const string& cmd) {
+    fprintf(engine, "%s\n", cmd.c_str());
+    fflush(engine);
+}
+
+void readLoop() {
+    char buffer[1024];
+    
+    while (running && fgets(buffer, sizeof(buffer), engine)) {
+        string line(buffer);
+        
+        if (line.find("info depth") != string::npos) {
+            
+            if (line.find("depth") != string::npos) {
+                depth = stoi(line.substr(line.find("depth") + 6));
+            }
+            
+            if (line.find("nodes") != string::npos) {
+                nodes = stoi(line.substr(line.find("nodes") + 6));
+            }
+            
+            if (line.find("nps") != string::npos) {
+                nps = stoi(line.substr(line.find("nps") + 4));
+            }
+            
+            if (line.find("score cp") != string::npos) {
+                evalCp = stoi(line.substr(line.find("score cp") + 9));
+            }
+            
+            if (line.find("pv") != string::npos) {
+                pv = line.substr(line.find("pv") + 3);
+            }
+        }
+        
+        if (line.find("bestmove") != string::npos) {
+            bestMove = line.substr(line.find("bestmove") + 9, 5);
+        }
     }
 }
 
 extern "C" {
 
-void sf_initialize() {
-    static bool initialized = false;
-    if (initialized) return;
-
-    initialized = true;
-
-    std::thread(engine_loop).detach();
+void sf_init() {
+    if (engine) return;
+    
+    engine = popen("./Stockfish/src/stockfish", "r+");
+    running = true;
+    
+    send("uci");
+    send("setoption name MultiPV value 3");
+    
+    thread(readLoop).detach();
 }
 
-void sf_send_command(const char* command) {
-    std::string cmd(command);
-
-    std::cout << cmd << std::endl;
+void sf_go(const char* fen) {
+    send("stop");
+    send(string("position fen ") + fen);
+    send("go infinite");
 }
 
-const char* sf_best_move(const char* fen) {
-    sf_initialize();
-
-    std::stringstream ss;
-    ss << "position fen " << fen << "\n";
-    ss << "go movetime 300\n";
-
-    std::cout << ss.str() << std::endl;
-
-    // TEMP fallback until we hook stdout parsing
-    bestMove = "e2e4";
-
-    return bestMove.c_str();
+void sf_stop() {
+    send("stop");
 }
+
+int sf_eval() { return evalCp; }
+int sf_depth() { return depth; }
+int sf_nodes() { return nodes; }
+int sf_nps() { return nps; }
+
+const char* sf_bestmove() { return bestMove.c_str(); }
+const char* sf_pv() { return pv.c_str(); }
 
 }
